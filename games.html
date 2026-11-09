@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi AAC Interaktif Pendidikan Khas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+  <style>
+    @keyframes circleProgress {
+      from { stroke-dashoffset: 100; }
+      to { stroke-dashoffset: 0; }
+    }
+    .animate-progress {
+      stroke-dasharray: 100;
+      animation: circleProgress var(--dwell-time, 3s) linear forwards;
+    }
+  </style>
+</head>
+<body id="appBody" class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans select-none transition-colors duration-300">
+
+  <!-- Header Navigasi -->
+  <header id="appHeader" class="bg-indigo-700 text-white p-4 shadow-lg flex flex-wrap justify-between items-center gap-4 transition-colors duration-300">
+    <div>
+      <h1 class="text-2xl font-bold flex items-center gap-2">🗣️ Papan AAC Pendidikan Khas</h1>
+      <p class="text-xs text-indigo-200" id="headerSubtitle">Sokongan Dwell Click + Mod Gelap/Cerah + Tambah Ayat</p>
+    </div>
+    
+    <!-- Tetapan Dwell, Masa & Tema -->
+    <div class="flex items-center gap-3 bg-indigo-800 p-2 rounded-xl text-sm border border-indigo-600 flex-wrap" id="controlPanel">
+      
+      <!-- Suis Dwell Click -->
+      <label class="flex items-center gap-2 cursor-pointer font-medium">
+        <input type="checkbox" id="dwellToggle" checked class="w-4 h-4 accent-amber-400">
+        Dwell Click
+      </label>
+
+      <!-- Pilihan Masa Dwell Click -->
+      <div class="flex items-center gap-1 border-l border-indigo-600 pl-3">
+        <span class="text-xs font-semibold">Masa:</span>
+        <select id="dwellTimeSelect" onchange="updateDwellTime()" class="dwell-btn bg-indigo-900 text-amber-300 text-xs font-bold p-1 rounded border border-indigo-500 outline-none cursor-pointer">
+          <option value="1.5">1.5 Saat</option>
+          <option value="3" selected>3 Saat</option>
+          <option value="5">5 Saat</option>
+        </select>
+      </div>
+
+      <!-- Butang Mod Gelap / Cerah -->
+      <button onclick="toggleDarkMode()" class="dwell-btn bg-indigo-900 hover:bg-indigo-950 px-3 py-1 rounded-lg font-bold text-xs transition border border-indigo-500 flex items-center gap-1" id="themeBtn">
+        🌙 Mod Gelap
+      </button>
+
+      <!-- Eye Tracking -->
+      <button id="toggleEyeTracker" onclick="toggleEyeGaze()" class="dwell-btn bg-amber-500 hover:bg-amber-600 px-3 py-1 rounded-lg font-bold text-slate-900 text-xs transition shadow">
+        👀 Eye Tracking
+      </button>
+
+    </div>
+  </header>
+
+  <!-- Papan Ayat (Sentence Strip) -->
+  <section id="sentenceCard" class="bg-white m-4 p-4 rounded-2xl shadow flex flex-col md:flex-row justify-between items-center gap-4 border-2 border-indigo-200 transition-colors duration-300">
+    <div class="flex-1 w-full">
+      <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Papan Ayat Saya:</h2>
+      <div id="sentenceStrip" class="min-h-[64px] p-2 bg-slate-50 border-2 border-dashed border-indigo-300 rounded-xl flex items-center gap-2 overflow-x-auto transition-colors duration-300">
+        <span class="text-gray-400 italic text-sm" id="emptyPlaceholder">Pilih kad di bawah untuk membina ayat...</span>
+      </div>
+    </div>
+    <div class="flex gap-2 w-full md:w-auto justify-end">
+      <button onclick="speakSentence()" class="dwell-btn bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-700 shadow text-lg flex items-center gap-2">
+        🔊 Sebut Ayat
+      </button>
+      <button onclick="clearSentence()" class="dwell-btn bg-rose-500 text-white font-bold px-4 py-3 rounded-xl hover:bg-rose-600 shadow">
+        🗑️ Padam
+      </button>
+    </div>
+  </section>
+
+  <!-- Tab Navigasi -->
+  <div class="px-4 flex gap-2">
+    <button onclick="switchTab('aac')" id="tabAac" class="dwell-btn bg-white text-indigo-700 font-bold px-6 py-2 rounded-t-xl border-t-4 border-indigo-600 shadow">
+      💬 Papan AAC
+    </button>
+    <button onclick="switchTab('custom')" id="tabCustom" class="dwell-btn bg-slate-200 text-slate-600 font-bold px-6 py-2 rounded-t-xl hover:bg-white shadow">
+      ➕ Tambah Perkataan Sendiri
+    </button>
+  </div>
+
+  <!-- KANDUNGAN 1: PAPAN AAC UTAMA -->
+  <main id="viewAac" class="flex-1 px-4 pb-6">
+    <div id="aacGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 bg-white p-4 rounded-b-2xl rounded-tr-2xl shadow min-h-[300px] border border-slate-200 transition-colors duration-300">
+      
+      <button onclick="addWord('Saya Mahu', '🙋‍♂️')" class="dwell-btn aac-card bg-blue-50 border-2 border-blue-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-blue-100 transition relative">
+        <span class="text-5xl">🙋‍♂️</span>
+        <span class="font-bold text-slate-800 text-center">Saya Mahu</span>
+      </button>
+      <button onclick="addWord('Makan', '🍚')" class="dwell-btn aac-card bg-amber-50 border-2 border-amber-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-amber-100 transition relative">
+        <span class="text-5xl">🍚</span>
+        <span class="font-bold text-slate-800 text-center">Makan</span>
+      </button>
+      <button onclick="addWord('Minum', '🥤')" class="dwell-btn aac-card bg-amber-50 border-2 border-amber-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-amber-100 transition relative">
+        <span class="text-5xl">🥤</span>
+        <span class="font-bold text-slate-800 text-center">Minum</span>
+      </button>
+      <button onclick="addWord('Tandas', '🚽')" class="dwell-btn aac-card bg-amber-50 border-2 border-amber-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-amber-100 transition relative">
+        <span class="text-5xl">🚽</span>
+        <span class="font-bold text-slate-800 text-center">Tandas</span>
+      </button>
+      <button onclick="addWord('Tidur', '🛌')" class="dwell-btn aac-card bg-amber-50 border-2 border-amber-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-amber-100 transition relative">
+        <span class="text-5xl">🛌</span>
+        <span class="font-bold text-slate-800 text-center">Tidur</span>
+      </button>
+      <button onclick="addWord('Gembira', '😊')" class="dwell-btn aac-card bg-pink-50 border-2 border-pink-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-pink-100 transition relative">
+        <span class="text-5xl">😊</span>
+        <span class="font-bold text-slate-800 text-center">Gembira</span>
+      </button>
+      <button onclick="addWord('Sakit', '🤕')" class="dwell-btn aac-card bg-pink-50 border-2 border-pink-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-pink-100 transition relative">
+        <span class="text-5xl">🤕</span>
+        <span class="font-bold text-slate-800 text-center">Sakit</span>
+      </button>
+      <button onclick="addWord('Tolong', '🆘')" class="dwell-btn aac-card bg-rose-50 border-2 border-rose-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-rose-100 transition relative">
+        <span class="text-5xl">🆘</span>
+        <span class="font-bold text-slate-800 text-center">Tolong</span>
+      </button>
+      <button onclick="addWord('Ya', '✅')" class="dwell-btn aac-card bg-emerald-50 border-2 border-emerald-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-emerald-100 transition relative">
+        <span class="text-5xl">✅</span>
+        <span class="font-bold text-slate-800 text-center">Ya</span>
+      </button>
+      <button onclick="addWord('Tidak', '❌')" class="dwell-btn aac-card bg-rose-50 border-2 border-rose-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-rose-100 transition relative">
+        <span class="text-5xl">❌</span>
+        <span class="font-bold text-slate-800 text-center">Tidak</span>
+      </button>
+
+    </div>
+  </main>
+
+  <!-- KANDUNGAN 2: BORANG TAMBAH PERKATAAN SENDIRI -->
+  <main id="viewCustom" class="flex-1 px-4 pb-6 hidden">
+    <div id="customFormCard" class="bg-white p-6 rounded-b-2xl rounded-tr-2xl shadow max-w-xl mx-auto border border-slate-200 transition-colors duration-300">
+      <h2 class="text-xl font-bold text-indigo-900 mb-4 flex items-center gap-2" id="customTitle">✨ Cipta Kad / Ayat Sendiri</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1" id="labelCardText">Perkataan / Ayat:</label>
+          <input type="text" id="customText" placeholder="Contoh: Saya nak main padang" class="w-full p-3 border-2 border-slate-300 rounded-xl focus:border-indigo-500 outline-none font-medium text-slate-900">
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1" id="labelEmoji">Pilih Simbol / Emoji:</label>
+          <div class="flex gap-2 text-2xl bg-slate-50 p-3 rounded-xl border border-slate-200 overflow-x-auto" id="emojiSelector">
+            <button onclick="selectEmoji('🎨')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">🎨</button>
+            <button onclick="selectEmoji('🎮')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">🎮</button>
+            <button onclick="selectEmoji('🍎')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">🍎</button>
+            <button onclick="selectEmoji('🚗')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">🚗</button>
+            <button onclick="selectEmoji('🏫')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">🏫</button>
+            <button onclick="selectEmoji('❤️')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">❤️</button>
+            <button onclick="selectEmoji('👍')" class="dwell-btn p-2 rounded-lg hover:bg-indigo-100">👍</button>
+          </div>
+          <input type="hidden" id="selectedEmoji" value="🎨">
+        </div>
+
+        <button onclick="createNewCard()" class="dwell-btn w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 shadow flex items-center justify-center gap-2 text-lg">
+          ➕ Tambah Ke Papan AAC
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- SKRIP FUNGSI UTAMA -->
+  <script>
+    let sentence = [];
+    let dwellTimer = null;
+    let currentHoverEl = null;
+    let isWebgazerActive = false;
+    let dwellDuration = 3000; // Lalai: 3 saat
+    let isDarkMode = false;
+
+    // Laraskan Masa Dwell Click
+    function updateDwellTime() {
+      const selectedVal = document.getElementById('dwellTimeSelect').value;
+      dwellDuration = parseFloat(selectedVal) * 1000;
+      document.documentElement.style.setProperty('--dwell-time', selectedVal + 's');
+      speak("Masa dwell " + selectedVal + " saat");
+    }
+
+    // Tukar Mod Gelap / Cerah
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      const body = document.getElementById('appBody');
+      const header = document.getElementById('appHeader');
+      const sentenceCard = document.getElementById('sentenceCard');
+      const sentenceStrip = document.getElementById('sentenceStrip');
+      const aacGrid = document.getElementById('aacGrid');
+      const customFormCard = document.getElementById('customFormCard');
+      const themeBtn = document.getElementById('themeBtn');
+
+      if (isDarkMode) {
+        body.className = "bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none transition-colors duration-300";
+        header.className = "bg-slate-950 text-white p-4 shadow-lg flex flex-wrap justify-between items-center gap-4 transition-colors duration-300";
+        sentenceCard.className = "bg-slate-800 m-4 p-4 rounded-2xl shadow flex flex-col md:flex-row justify-between items-center gap-4 border-2 border-indigo-500 transition-colors duration-300";
+        sentenceStrip.className = "min-h-[64px] p-2 bg-slate-900 border-2 border-dashed border-indigo-400 rounded-xl flex items-center gap-2 overflow-x-auto transition-colors duration-300";
+        aacGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 bg-slate-800 p-4 rounded-b-2xl rounded-tr-2xl shadow min-h-[300px] border border-slate-700 transition-colors duration-300";
+        customFormCard.className = "bg-slate-800 p-6 rounded-b-2xl rounded-tr-2xl shadow max-w-xl mx-auto border border-slate-700 text-white transition-colors duration-300";
+        themeBtn.innerText = "☀️ Mod Cerah";
+      } else {
+        body.className = "bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans select-none transition-colors duration-300";
+        header.className = "bg-indigo-700 text-white p-4 shadow-lg flex flex-wrap justify-between items-center gap-4 transition-colors duration-300";
+        sentenceCard.className = "bg-white m-4 p-4 rounded-2xl shadow flex flex-col md:flex-row justify-between items-center gap-4 border-2 border-indigo-200 transition-colors duration-300";
+        sentenceStrip.className = "min-h-[64px] p-2 bg-slate-50 border-2 border-dashed border-indigo-300 rounded-xl flex items-center gap-2 overflow-x-auto transition-colors duration-300";
+        aacGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 bg-white p-4 rounded-b-2xl rounded-tr-2xl shadow min-h-[300px] border border-slate-200 transition-colors duration-300";
+        customFormCard.className = "bg-white p-6 rounded-b-2xl rounded-tr-2xl shadow max-w-xl mx-auto border border-slate-200 text-slate-900 transition-colors duration-300";
+        themeBtn.innerText = "🌙 Mod Gelap";
+      }
+    }
+
+    // Fungsi Suara (Text-to-Speech)
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ms-MY';
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Tambah Kad ke Papan Ayat
+    function addWord(word, emoji) {
+      sentence.push({ word, emoji });
+      renderSentence();
+      speak(word);
+    }
+
+    function renderSentence() {
+      const container = document.getElementById('sentenceStrip');
+      const placeholder = document.getElementById('emptyPlaceholder');
+      
+      if (sentence.length === 0) {
+        placeholder.style.display = 'block';
+        container.querySelectorAll('.sentence-item').forEach(el => el.remove());
+        return;
+      }
+      
+      placeholder.style.display = 'none';
+      container.querySelectorAll('.sentence-item').forEach(el => el.remove());
+
+      sentence.forEach((item) => {
+        const chip = document.createElement('div');
+        chip.className = 'sentence-item bg-indigo-500 text-white px-3 py-1.5 rounded-lg flex items-center gap-2 font-bold shadow';
+        chip.innerHTML = `<span>${item.emoji}</span><span>${item.word}</span>`;
+        container.appendChild(chip);
+      });
+    }
+
+    function clearSentence() {
+      sentence = [];
+      renderSentence();
+      speak("Dipadam");
+    }
+
+    function speakSentence() {
+      if (sentence.length === 0) return;
+      const fullText = sentence.map(s => s.word).join(" ");
+      speak(fullText);
+    }
+
+    function switchTab(tab) {
+      document.getElementById('viewAac').classList.toggle('hidden', tab !== 'aac');
+      document.getElementById('viewCustom').classList.toggle('hidden', tab !== 'custom');
+      
+      document.getElementById('tabAac').className = tab === 'aac' ? 'dwell-btn bg-white text-indigo-700 font-bold px-6 py-2 rounded-t-xl border-t-4 border-indigo-600 shadow' : 'dwell-btn bg-slate-200 text-slate-600 font-bold px-6 py-2 rounded-t-xl hover:bg-white shadow';
+      document.getElementById('tabCustom').className = tab === 'custom' ? 'dwell-btn bg-white text-indigo-700 font-bold px-6 py-2 rounded-t-xl border-t-4 border-indigo-600 shadow' : 'dwell-btn bg-slate-200 text-slate-600 font-bold px-6 py-2 rounded-t-xl hover:bg-white shadow';
+    }
+
+    function selectEmoji(emoji) {
+      document.getElementById('selectedEmoji').value = emoji;
+      speak("Emoji dipilih");
+    }
+
+    function createNewCard() {
+      const text = document.getElementById('customText').value.trim();
+      const emoji = document.getElementById('selectedEmoji').value;
+      if (!text) return;
+
+      const btn = document.createElement('button');
+      btn.onclick = () => addWord(text, emoji);
+      btn.className = 'dwell-btn aac-card bg-purple-50 border-2 border-purple-400 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-purple-100 transition relative';
+      btn.innerHTML = `<span class="text-5xl">${emoji}</span><span class="font-bold text-slate-800 text-center">${text}</span>`;
+
+      document.getElementById('aacGrid').appendChild(btn);
+      document.getElementById('customText').value = '';
+      setupDwellClick();
+      switchTab('aac');
+      speak("Kad baharu ditambah");
+    }
+
+    // LOGIK DWELL CLICK PADA SELURUH ELEMEN
+    function setupDwellClick() {
+      const targets = document.querySelectorAll('.dwell-btn');
+
+      targets.forEach(el => {
+        el.onmouseenter = () => {
+          if (!document.getElementById('dwellToggle').checked) return;
+          currentHoverEl = el;
+          createDwellProgress(el);
+
+          dwellTimer = setTimeout(() => {
+            el.click();
+            removeDwellProgress(el);
+          }, dwellDuration);
+        };
+
+        el.onmouseleave = () => {
+          clearTimeout(dwellTimer);
+          removeDwellProgress(el);
+          currentHoverEl = null;
+        };
+      });
+    }
+
+    function createDwellProgress(el) {
+      removeDwellProgress(el);
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "dwell-overlay absolute inset-0 w-full h-full pointer-events-none");
+      svg.setAttribute("viewBox", "0 0 100 100");
+      svg.innerHTML = `<rect x="2" y="2" width="96" height="96" rx="12" fill="none" stroke="#f59e0b" stroke-width="6" class="animate-progress"/>`;
+      el.style.position = 'relative';
+      el.appendChild(svg);
+    }
+
+    function removeDwellProgress(el) {
+      if (!el) return;
+      const overlay = el.querySelector('.dwell-overlay');
+      if (overlay) overlay.remove();
+    }
+
+    function toggleEyeGaze() {
+      const btn = document.getElementById('toggleEyeTracker');
+
+      if (!isWebgazerActive) {
+        webgazer.setGazeListener((data) => {
+          if (!data) return;
+          const element = document.elementFromPoint(data.x, data.y);
+          if (element && element.classList.contains('dwell-btn')) {
+            if (currentHoverEl !== element) {
+              if (currentHoverEl) currentHoverEl.dispatchEvent(new Event('mouseleave'));
+              element.dispatchEvent(new Event('mouseenter'));
+            }
+          }
+        }).begin();
+
+        webgazer.showPredictionPoints(true);
+        btn.innerText = "🛑 Matikan Eye Tracking";
+        btn.className = "dwell-btn bg-rose-500 hover:bg-rose-600 px-3 py-1 rounded-lg font-bold text-white text-xs transition shadow";
+        isWebgazerActive = true;
+      } else {
+        webgazer.end();
+        btn.innerText = "👀 Eye Tracking";
+        btn.className = "dwell-btn bg-amber-500 hover:bg-amber-600 px-3 py-1 rounded-lg font-bold text-slate-900 text-xs transition shadow";
+        isWebgazerActive = false;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.documentElement.style.setProperty('--dwell-time', '3s');
+      setupDwellClick();
+    });
+  </script>
+</body>
+</html>
